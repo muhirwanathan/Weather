@@ -1,0 +1,28 @@
+# Local replica of the production topology: two app servers behind HAProxy.
+#   docker compose up --build
+#   open http://localhost:8080  (refresh and watch the "Served by" footer alternate)
+services:
+  web-01:
+    build: .
+    env_file: [{ path: .env, required: false }]
+    environment:
+      SERVER_NAME: web-01
+      TRUST_PROXY: "1"
+    restart: unless-stopped
+
+  web-02:
+    build: .
+    env_file: [{ path: .env, required: false }]
+    environment:
+      SERVER_NAME: web-02
+      TRUST_PROXY: "1"
+    restart: unless-stopped
+
+  lb-01:
+    image: haproxy:2.9-alpine
+    volumes:
+      - ./deploy/haproxy/haproxy.docker.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "8080:80"
+    depends_on: [web-01, web-02]
+    restart: unless-stopped
