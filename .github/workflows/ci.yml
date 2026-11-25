@@ -1,0 +1,60 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t weatherglass:ci .
+      - name: Smoke test container
+        run: |
+          docker run -d --name wg -p 3000:3000 -e SERVER_NAME=ci weatherglass:ci
+          for i in $(seq 1 20); do curl -fsS http://localhost:3000/api/health && exit 0; sleep 1; done
+          docker logs wg; exit 1
+
+  # Rolling deploy to Web01/Web02. Runs only on main, and only once the
+  # repository variable DEPLOY_ENABLED=true and these secrets exist:
+  #   SSH_PRIVATE_KEY, SSH_USER, WEB01_HOST, WEB02_HOST, LB_HOST
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, docker]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    concurrency: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+      - name: Rolling deploy
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          WEB01: ${{ secrets.WEB01_HOST }}
+          WEB02: ${{ secrets.WEB02_HOST }}
+          LB: ${{ secrets.LB_HOST }}
+          SSH_OPTS: -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10
+        run: bash deploy/rolling-deploy.sh
