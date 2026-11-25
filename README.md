@@ -71,11 +71,11 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
                               ┌────────────────────────────────────────────┐
    Browser ── HTTP ─────────▶ │ Sandbox 1  63e47b373378…alu-cod.online     │
    :58546 (mapped to :80)     │                                            │
-                              │  lb-01   HAProxy :80  round robin +        │
+                              │  lb-01   HAProxy :80/:8080  round robin +  │
                               │          health checks on /api/health      │
                               │     │                          │           │
                               │     ▼                          │           │
-                              │  web-01  nginx :8080           │           │
+                              │  web-01  nginx :5000           │           │
                               │            └▶ Node :3000 (pm2) │           │
                               └────────────────────────────────┼───────────┘
                                                                │ :44506 (mapped to :80)
@@ -93,7 +93,7 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 - The server is **stateless**: user preferences live in the browser's localStorage, so either web server can answer any request. No sticky sessions are needed.
 - Every response carries an `X-Served-By: web-01|web-02` header, and the page footer shows it too, so you can see the load balancing happen.
 
-> **Why two sandboxes instead of three servers?** The deployment uses the ALU intranet sandboxes (Ubuntu 20.04), which allow two running at once. The load balancer therefore shares Sandbox 1 with web-01. HAProxy owns port 80 and web-01's nginx moves to port 8080. Traffic is still split 50/50 between two independent web servers on two separate machines, and either one can fail without taking the site down. The same scripts also work on three separate servers (see [Deploying on three dedicated servers](#deploying-on-three-dedicated-servers)).
+> **Why two sandboxes instead of three servers?** The deployment uses the ALU intranet sandboxes (Ubuntu 20.04), which allow two running at once. The load balancer therefore shares Sandbox 1 with web-01. HAProxy owns ports 80 and 8080, and web-01's nginx moves to internal port 5000. Traffic is still split 50/50 between two independent web servers on two separate machines, and either one can fail without taking the site down. The same scripts also work on three separate servers (see [Deploying on three dedicated servers](#deploying-on-three-dedicated-servers)).
 
 ---
 
@@ -149,8 +149,8 @@ docker compose up --build
 
 | Role | Sandbox host | Internal port | Public URL |
 |---|---|---|---|
-| **lb-01** (HAProxy) | `63e47b373378.d33531d3.alu-cod.online` | 80 | **http://63e47b373378.d33531d3.alu-cod.online:58546/** ← the app |
-| **web-01** (nginx → Node) | `63e47b373378.d33531d3.alu-cod.online` | 8080 | http://63e47b373378.d33531d3.alu-cod.online:58538/ |
+| **lb-01** (HAProxy) | `63e47b373378.d33531d3.alu-cod.online` | 80, 8080 | **http://63e47b373378.d33531d3.alu-cod.online:58546/** ← the app |
+| **web-01** (nginx → Node) | `63e47b373378.d33531d3.alu-cod.online` | 5000 | internal only (reached through the LB) |
 | **web-02** (nginx → Node) | `cb8ad26ec6c4.1de0cb85.alu-cod.online` | 80 | http://cb8ad26ec6c4.1de0cb85.alu-cod.online:44506/ |
 
 Each sandbox exposes its internal ports through the intranet's port mapping (for example, Sandbox 2 maps HTTP :80 to public port 44506). That is how the load balancer reaches web-02.
@@ -175,7 +175,7 @@ Open **Webterm** on Sandbox 1, or SSH in with `ssh -p 58547 <username>@63e47b373
 ```bash
 git clone https://github.com/muhirwanathan/Weather.git weatherglass
 cd weatherglass
-bash deploy/sandbox/setup-web.sh web-01 8080
+bash deploy/sandbox/setup-web.sh web-01 5000
 nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass --update-env
 ```
 
@@ -190,7 +190,7 @@ What [deploy/sandbox/setup-web.sh](deploy/sandbox/setup-web.sh) does:
 
 ```bash
 cd ~/weatherglass
-bash deploy/setup-lb.sh 127.0.0.1:8080 cb8ad26ec6c4.1de0cb85.alu-cod.online:44506
+bash deploy/setup-lb.sh 127.0.0.1:5000 cb8ad26ec6c4.1de0cb85.alu-cod.online:44506
 ```
 
 [deploy/setup-lb.sh](deploy/setup-lb.sh) installs HAProxy, fills the two backend addresses into [deploy/haproxy/haproxy.cfg](deploy/haproxy/haproxy.cfg), validates it (`haproxy -c`), starts it on port 80, and checks that both backends answer. Key settings:
@@ -242,7 +242,8 @@ In the browser, refresh the page and watch the footer change between "Served by 
 
 **2. Each web server works on its own.**
 ```bash
-curl http://63e47b373378.d33531d3.alu-cod.online:58538/api/health   # {"status":"ok","server":"web-01",...}
+# on Sandbox 1:
+curl http://127.0.0.1:5000/api/health                              # {"status":"ok","server":"web-01",...}
 curl http://cb8ad26ec6c4.1de0cb85.alu-cod.online:44506/api/health   # {"status":"ok","server":"web-02",...}
 ```
 
@@ -264,7 +265,7 @@ Update one server at a time with [deploy/sandbox/update.sh](deploy/sandbox/updat
 # Sandbox 2 first
 cd ~/weatherglass && bash deploy/sandbox/update.sh 80      # wait for "healthy"
 # then Sandbox 1
-cd ~/weatherglass && bash deploy/sandbox/update.sh 8080
+cd ~/weatherglass && bash deploy/sandbox/update.sh 5000
 ```
 While one server restarts, HAProxy's health check takes it out of rotation and sends all traffic to the other one. Node also finishes in-flight requests on `SIGTERM` before exiting. On dedicated servers, [deploy/rolling-deploy.sh](deploy/rolling-deploy.sh) does the same over SSH.
 
@@ -355,8 +356,9 @@ All endpoints are `GET` and return JSON. Errors look like `{"error":{"code":"INV
 6. **Real client IPs behind two proxies.** Without care, every user shares the load balancer's IP and the rate limiter blocks everyone at once. *Solution:* `option forwardfor` in HAProxy, `$proxy_add_x_forwarded_for` in nginx, and `trust proxy = 2` in Express.
 7. **Updating without downtime.** *Solution:* graceful shutdown, HAProxy health checks and a one-server-at-a-time rolling deploy.
 8. **CSP vs. dynamic UI.** A strict CSP forbids inline styles and scripts. *Solution:* all JS/CSS lives in external files, and dynamic positions (chart, bars) are set through the CSSOM (`element.style`), which CSP allows.
-9. **Only two sandboxes and no systemd.** The intranet sandboxes allow two running containers and don't run systemd. *Solution:* the load balancer shares Sandbox 1 with web-01 (HAProxy on :80, web-01's nginx on :8080). HAProxy reaches web-02 through Sandbox 2's public port mapping (:44506), pm2 replaces systemd, and `start-all.sh` brings everything back after a sandbox restart.
-10. **HAProxy 2.0 on Ubuntu 20.04.** The newer `http-check send` syntax isn't supported there. *Solution:* the config uses the `option httpchk GET /api/health HTTP/1.1` form, which works on both old and new versions.
+9. **Only two sandboxes and no systemd.** The intranet sandboxes allow two running containers and don't run systemd. *Solution:* the load balancer shares Sandbox 1 with web-01 (HAProxy on :80 and :8080, web-01's nginx on internal :5000). HAProxy reaches web-02 through Sandbox 2's public port mapping (:44506), pm2 replaces systemd, and `start-all.sh` brings everything back after a sandbox restart.
+10. **The sandbox's public HTTP port skipped the load balancer.** Testing showed that Sandbox 1's public "HTTP" port (58546) reached the container on port 8080, not 80. Traffic went straight to web-01's nginx and never touched HAProxy. *Solution:* HAProxy now listens on both 80 and 8080, and web-01's nginx moved to an internal port (5000). Every public request now passes through the load balancer, which I confirmed with the `X-Load-Balancer` header.
+11. **HAProxy 2.0 on Ubuntu 20.04.** The newer `http-check send` syntax isn't supported there. *Solution:* the config uses the `option httpchk GET /api/health HTTP/1.1` form, which works on both old and new versions.
 
 ---
 

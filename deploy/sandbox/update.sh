@@ -3,7 +3,7 @@
 # For zero downtime, run it on web-02 first, wait for "healthy", then on web-01.
 # HAProxy keeps routing traffic to whichever server is up.
 #
-#   bash deploy/sandbox/update.sh <nginx-port>      (web-01: 8080, web-02: 80)
+#   bash deploy/sandbox/update.sh <nginx-port>      (web-01: 5000, web-02: 80)
 set -euo pipefail
 PORT="${1:?usage: update.sh <nginx-port>}"
 cd "$(cd "$(dirname "$0")/../.." && pwd)"

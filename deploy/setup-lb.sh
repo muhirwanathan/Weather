@@ -4,7 +4,7 @@
 #   bash deploy/setup-lb.sh <web01 host[:port]> <web02 host[:port]>     (port defaults to 80)
 #
 # Sandbox example (web-01 on the same box, web-02 on the second sandbox):
-#   bash deploy/setup-lb.sh 127.0.0.1:8080 cb8ad26ec6c4.1de0cb85.alu-cod.online:44506
+#   bash deploy/setup-lb.sh 127.0.0.1:5000 cb8ad26ec6c4.1de0cb85.alu-cod.online:44506
 set -euo pipefail
 
 SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"
@@ -31,4 +31,4 @@ echo "==> Checking both backends"
 for b in "$WEB01" "$WEB02"; do
   if curl -fsS --max-time 5 "http://$b/api/health" >/dev/null; then echo "    $b OK"; else echo "    !! $b is not answering yet"; fi
 done
-echo "==> Load balancer on :80 -> $WEB01, $WEB02"
+echo "==> Load balancer on :80 and :8080 -> $WEB01, $WEB02"

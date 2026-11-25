@@ -4,7 +4,7 @@
 #
 #   bash deploy/sandbox/setup-web.sh <server-name> <nginx-port>
 #
-#   Sandbox 1 (also hosts the load balancer on :80):  bash deploy/sandbox/setup-web.sh web-01 8080
+#   Sandbox 1 (also hosts the load balancer on :80/:8080): bash deploy/sandbox/setup-web.sh web-01 5000
 #   Sandbox 2:                                         bash deploy/sandbox/setup-web.sh web-02 80
 #
 # Node.js runs under pm2 (keeps it alive and restarts it if it crashes);
