@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-time setup of a web server (run ON Web01 and ON Web02 as a sudo user).
 #
-#   curl -fsSL https://raw.githubusercontent.com/muhirwanathan/<repo>/main/deploy/setup-web.sh -o setup-web.sh
-#   sudo bash setup-web.sh https://github.com/muhirwanathan/<repo>.git web-01
+#   curl -fsSL https://raw.githubusercontent.com/muhirwanathan/Weather/main/deploy/setup-web.sh -o setup-web.sh
+#   sudo bash setup-web.sh https://github.com/muhirwanathan/Weather.git web-01
 #
 # Idempotent: safe to run again.
 set -euo pipefail

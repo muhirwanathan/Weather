@@ -1,4 +1,4 @@
-# WeatherGlass ☀️🌧️
+# WeatherGlass
 
 **Live forecasts turned into everyday decisions.** WeatherGlass answers the questions people actually check the weather for: *Do I need an umbrella? When is the best time to go for a run? Can I dry laundry outside? What should I wear? Is the air safe?* It also lets you compare all your cities side by side.
 
@@ -9,7 +9,7 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 | **Author** | Muhirwa Nathan |
 | **Live app (load balancer)** | http://63e47b373378.d33531d3.alu-cod.online:58546/ |
 | **Demo video (≤ 2 min)** | `<YouTube/Vimeo link>` ← *replace* |
-| **Repository** | `https://github.com/muhirwanathan/<repo>` ← *replace* |
+| **Repository** | https://github.com/muhirwanathan/Weather |
 
 ---
 
@@ -36,16 +36,16 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 
 | Day planner card | How it is decided |
 |---|---|
-| ☂️ Umbrella | Peak rain probability and thunderstorm risk over the next 12 h |
-| 🏃 Outdoor exercise | Scores every hour 0–100 (feels-like temperature, rain, wind, UV, daylight, storms) and recommends the best 2-hour window |
-| 👕 What to wear | Feels-like temperature and wind |
-| 🧴 Sun protection | Highest UV index in the coming 12 h (WHO categories) |
-| 👚 Laundry drying | Rain chance and humidity over the next daylight hours |
-| 🫁 Air quality | US AQI with health advice (EPA categories) |
+| Umbrella | Peak rain probability and thunderstorm risk over the next 12 h |
+| Outdoor exercise | Scores every hour 0–100 (feels-like temperature, rain, wind, UV, daylight, storms) and recommends the best 2-hour window |
+| What to wear | Feels-like temperature and wind |
+| Sun protection | Highest UV index in the coming 12 h (WHO categories) |
+| Laundry drying | Rain chance and humidity over the next daylight hours |
+| Air quality | US AQI with health advice (EPA categories) |
 
 **Working with the data**
 - **Search** any city worldwide, with autocomplete (debounced, keyboard navigable: ↑ ↓ Enter Esc) and support for accents and non-Latin names.
-- **My cities, compared:** save up to 10 cities (⭐) and compare them in one table:
+- **My cities, compared:** save up to 10 cities and compare them in one table:
   - **Sort** by any column (city, condition, temperature, high, rain chance, wind, humidity, AQI). Click again to reverse.
   - **Filter** by text (name/country) and by condition (clear, cloudy, rain, snow, storm…).
   - Click a row to open that city.
@@ -56,12 +56,12 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 - **Readable at a glance:** the background follows the conditions and day/night, the icons are animated (and respect *reduced motion*), the layout works on phones, and the page is accessible (ARIA, keyboard, screen-reader chart summaries).
 
 **Bonus features implemented**
-- ⚡ **Caching:** server-side TTL + LRU cache with request coalescing, plus HTTP cache headers.
-- 🛡️ **Security:** strict Content-Security-Policy, Helmet headers, input validation, rate limiting, XSS-safe rendering, key kept server-side.
-- 🔁 **Provider failover:** automatic switch to OpenWeatherMap if Open-Meteo fails, plus stale-if-error.
-- 🐳 **Docker:** Dockerfile and a `docker-compose.yml` that recreates the 2 servers + load balancer setup locally.
-- 🚀 **CI/CD:** GitHub Actions runs tests on Node 20/22, builds and smoke-tests the Docker image, and can do a rolling zero-downtime deploy.
-- 📈 **Data visualisation:** a dependency-free SVG chart.
+- **Caching:** server-side TTL + LRU cache with request coalescing, plus HTTP cache headers.
+- **Security:** strict Content-Security-Policy, Helmet headers, input validation, rate limiting, XSS-safe rendering, key kept server-side.
+- **Provider failover:** automatic switch to OpenWeatherMap if Open-Meteo fails, plus stale-if-error.
+- **Docker:** Dockerfile and a `docker-compose.yml` that recreates the 2 servers + load balancer setup locally.
+- **CI/CD:** GitHub Actions runs tests on Node 20/22, builds and smoke-tests the Docker image, and can do a rolling zero-downtime deploy.
+- **Data visualisation:** a dependency-free SVG chart.
 
 ---
 
@@ -122,8 +122,8 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 **Requirements:** Node.js 20 or newer ([download](https://nodejs.org/)), git.
 
 ```bash
-git clone https://github.com/muhirwanathan/<repo>.git
-cd <repo>
+git clone https://github.com/muhirwanathan/Weather.git
+cd Weather
 npm install
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
 # optional: put your OpenWeatherMap key in .env -> OPENWEATHER_API_KEY=...
@@ -162,7 +162,7 @@ Sandboxes have **no systemd**, so the app runs under **[pm2](https://pm2.keymetr
 Open **Webterm** on Sandbox 2, or SSH in with `ssh -p 44507 <username>@cb8ad26ec6c4.1de0cb85.alu-cod.online`, then:
 
 ```bash
-git clone https://github.com/muhirwanathan/<repo>.git weatherglass
+git clone https://github.com/muhirwanathan/Weather.git weatherglass
 cd weatherglass
 bash deploy/sandbox/setup-web.sh web-02 80
 nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass --update-env
@@ -173,7 +173,7 @@ nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass
 Open **Webterm** on Sandbox 1, or SSH in with `ssh -p 58547 <username>@63e47b373378.d33531d3.alu-cod.online`, then:
 
 ```bash
-git clone https://github.com/muhirwanathan/<repo>.git weatherglass
+git clone https://github.com/muhirwanathan/Weather.git weatherglass
 cd weatherglass
 bash deploy/sandbox/setup-web.sh web-01 8080
 nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass --update-env
@@ -219,7 +219,7 @@ It restores the pm2 app and starts nginx (and HAProxy on Sandbox 1).
 On full Ubuntu servers with systemd (separate Web01, Web02 and Lb01), use the production scripts instead:
 ```bash
 # on Web01 and Web02 (runs the app as an unprivileged user under systemd, nginx on :80)
-sudo bash deploy/setup-web.sh https://github.com/muhirwanathan/<repo>.git web-01   # web-02 on the other
+sudo bash deploy/setup-web.sh https://github.com/muhirwanathan/Weather.git web-01   # web-02 on the other
 # on Lb01
 sudo bash deploy/setup-lb.sh WEB01_IP WEB02_IP
 ```
