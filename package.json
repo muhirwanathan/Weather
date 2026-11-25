@@ -1,0 +1,25 @@
+{
+  "name": "weatherglass",
+  "version": "2.0.0",
+  "description": "WeatherGlass: a practical weather planning dashboard (live forecasts, activity planner, city comparison) served by a cached, fault-tolerant Node.js API proxy.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "check": "node --check server.js && node --check src/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "author": "Muhirwa Nathan",
+  "license": "MIT",
+  "dependencies": {
+    "compression": "^1.8.2",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.5",
+    "helmet": "^8.3.0"
+  }
+}
