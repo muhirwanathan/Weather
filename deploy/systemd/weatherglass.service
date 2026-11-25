@@ -1,0 +1,29 @@
+# /etc/systemd/system/weatherglass.service  (Web01 and Web02)
+[Unit]
+Description=WeatherGlass Node.js app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=weatherglass
+Group=weatherglass
+WorkingDirectory=/opt/weatherglass
+EnvironmentFile=/opt/weatherglass/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=2
+# Graceful shutdown: the app finishes in-flight requests on SIGTERM.
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/weatherglass
+
+[Install]
+WantedBy=multi-user.target
