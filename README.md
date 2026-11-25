@@ -10,6 +10,8 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 | **Live app (load balancer)** | http://63e47b373378.d33531d3.alu-cod.online:58546/ |
 | **Demo video (≤ 2 min)** | _link to be added_ |
 | **Repository** | https://github.com/muhirwanathan/Weather |
+| **API keys** | Open-Meteo needs none. The optional OpenWeatherMap key is in the submission comment. |
+| **Login** | None required (no user accounts) |
 
 ---
 
