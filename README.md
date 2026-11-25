@@ -8,7 +8,7 @@ It runs as a Node.js backend that caches the weather APIs and fails over between
 |---|---|
 | **Author** | Muhirwa Nathan |
 | **Live app (load balancer)** | http://63e47b373378.d33531d3.alu-cod.online:58546/ |
-| **Demo video (≤ 2 min)** | `<YouTube/Vimeo link>` ← *replace* |
+| **Demo video (≤ 2 min)** | _link to be added_ |
 | **Repository** | https://github.com/muhirwanathan/Weather |
 
 ---
@@ -162,8 +162,8 @@ Sandboxes have **no systemd**, so the app runs under **[pm2](https://pm2.keymetr
 Open **Webterm** on Sandbox 2, or SSH in with `ssh -p 44507 <username>@cb8ad26ec6c4.1de0cb85.alu-cod.online`, then:
 
 ```bash
-git clone https://github.com/muhirwanathan/Weather.git weatherglass
-cd weatherglass
+git clone https://github.com/muhirwanathan/Weather.git /weatherglass
+cd /weatherglass
 bash deploy/sandbox/setup-web.sh web-02 80
 nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass --update-env
 ```
@@ -173,8 +173,8 @@ nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass
 Open **Webterm** on Sandbox 1, or SSH in with `ssh -p 58547 <username>@63e47b373378.d33531d3.alu-cod.online`, then:
 
 ```bash
-git clone https://github.com/muhirwanathan/Weather.git weatherglass
-cd weatherglass
+git clone https://github.com/muhirwanathan/Weather.git /weatherglass
+cd /weatherglass
 bash deploy/sandbox/setup-web.sh web-01 5000
 nano .env        # paste OPENWEATHER_API_KEY=..., then: pm2 restart weatherglass --update-env
 ```
@@ -189,7 +189,7 @@ What [deploy/sandbox/setup-web.sh](deploy/sandbox/setup-web.sh) does:
 ### 3. lb-01 (Sandbox 1, after web-01)
 
 ```bash
-cd ~/weatherglass
+cd /weatherglass
 bash deploy/setup-lb.sh 127.0.0.1:5000 cb8ad26ec6c4.1de0cb85.alu-cod.online:44506
 ```
 
@@ -210,7 +210,7 @@ The config uses syntax that works with HAProxy 2.0 (the Ubuntu 20.04 package) an
 
 Nothing starts automatically in a sandbox. After using **Restart** in the intranet, run this on each sandbox:
 ```bash
-cd ~/weatherglass && bash deploy/sandbox/start-all.sh
+cd /weatherglass && bash deploy/sandbox/start-all.sh
 ```
 It restores the pm2 app and starts nginx (and HAProxy on Sandbox 1).
 
@@ -232,12 +232,17 @@ See [deploy/systemd/weatherglass.service](deploy/systemd/weatherglass.service) f
 **1. Traffic alternates between the servers.**
 ```bash
 for i in $(seq 1 6); do
-  curl -s -o /dev/null -D - http://63e47b373378.d33531d3.alu-cod.online:58546/api/health | grep -i x-served-by
+  curl -s -o /dev/null -D - http://63e47b373378.d33531d3.alu-cod.online:58546/api/health | grep -iE 'x-served-by|x-load-balancer' | paste -sd' '
 done
-# X-Served-By: web-01
-# X-Served-By: web-02
-# X-Served-By: web-01 ...
 ```
+Actual output from the live deployment:
+```
+x-served-by: web-01 x-load-balancer: lb-01
+x-served-by: web-02 x-load-balancer: lb-01
+x-served-by: web-01 x-load-balancer: lb-01
+x-served-by: web-02 x-load-balancer: lb-01
+```
+Every response carries `x-load-balancer: lb-01`, which proves it passed through HAProxy, and `x-served-by` alternates between the two web servers. (Requests from other visitors at the same moment also take turns, so you may occasionally see the same server twice in a row.)
 In the browser, refresh the page and watch the footer change between "Served by web-01" and "Served by web-02".
 
 **2. Each web server works on its own.**
@@ -263,9 +268,9 @@ Update one server at a time with [deploy/sandbox/update.sh](deploy/sandbox/updat
 
 ```bash
 # Sandbox 2 first
-cd ~/weatherglass && bash deploy/sandbox/update.sh 80      # wait for "healthy"
+cd /weatherglass && bash deploy/sandbox/update.sh 80      # wait for "healthy"
 # then Sandbox 1
-cd ~/weatherglass && bash deploy/sandbox/update.sh 5000
+cd /weatherglass && bash deploy/sandbox/update.sh 5000
 ```
 While one server restarts, HAProxy's health check takes it out of rotation and sends all traffic to the other one. Node also finishes in-flight requests on `SIGTERM` before exiting. On dedicated servers, [deploy/rolling-deploy.sh](deploy/rolling-deploy.sh) does the same over SSH.
 
