@@ -15,7 +15,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 
 echo "==> Installing HAProxy"
 $SUDO apt-get update -y
-$SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y haproxy curl
+$SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y haproxy curl
 
 [ -f /etc/haproxy/haproxy.cfg ] && $SUDO cp /etc/haproxy/haproxy.cfg "/etc/haproxy/haproxy.cfg.bak.$(date +%s)"
 sed -e "s/WEB01_ADDR/$WEB01/" -e "s/WEB02_ADDR/$WEB02/" "$HERE/haproxy/haproxy.cfg" | $SUDO tee /etc/haproxy/haproxy.cfg >/dev/null

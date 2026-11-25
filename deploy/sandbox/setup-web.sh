@@ -19,12 +19,12 @@ cd "$APP_DIR"
 
 echo "==> Installing nginx, curl, git"
 $SUDO apt-get update -y
-$SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y nginx curl git ca-certificates
+$SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y nginx curl git ca-certificates
 
 if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
   echo "==> Installing Node.js 20"
-  curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO -E bash -
-  $SUDO apt-get install -y nodejs
+  curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO bash -
+  $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
 fi
 command -v pm2 >/dev/null || $SUDO npm install -g pm2
 
