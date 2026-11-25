@@ -1,0 +1,21 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies / caches
+node_modules/
+.npm/
+coverage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Old Flutter prototype (local only; contains a browser profile with cookies)
+_old_flutter/
+.dart_tool/
+build/
